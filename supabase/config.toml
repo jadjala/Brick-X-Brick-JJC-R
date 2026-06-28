@@ -1,0 +1,12 @@
+# Supabase CLI config for the BxB Attendance Module.
+# We use the HOSTED project (not the local Docker stack). After installing the
+# CLI, link to the hosted project with:  supabase link --project-ref <ref>
+# then apply migrations with:             supabase db push
+project_id = "bxb-attendance"
+
+[db]
+# Postgres major version of the hosted project (SPEC: Supabase Postgres 15).
+major_version = 15
+
+[migrations]
+schema_paths = ["./migrations"]

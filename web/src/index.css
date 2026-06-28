@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* SPEC §13.1 brutalist tokens (raw) */
+    --ink: #0a0a0a;
+    --paper: #f5f5f0;
+    --steel: #3d3d3d;
+    --concrete: #8a8a8a;
+    --orange: #ff6b00;
+    --yellow: #ffd60a;
+    --green: #1f7a3a;
+    --red: #b91c1c;
+    --blue: #1e40af;
+
+    --border-w: 2px;
+    --shadow: 4px 4px 0 var(--ink);
+    --shadow-sm: 2px 2px 0 var(--ink);
+
+    /* No rounded corners, ever (SPEC §13.2). */
+    --radius: 0px;
+
+    /* shadcn/ui HSL tokens mapped onto the brutalist palette (Sprint 2 components). */
+    --background: 60 14% 95%; /* paper */
+    --foreground: 0 0% 4%; /* ink */
+    --card: 60 14% 95%;
+    --card-foreground: 0 0% 4%;
+    --popover: 60 14% 95%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 24 100% 50%; /* safety orange */
+    --primary-foreground: 60 14% 95%;
+    --secondary: 0 0% 24%; /* steel */
+    --secondary-foreground: 60 14% 95%;
+    --muted: 0 0% 54%; /* concrete */
+    --muted-foreground: 0 0% 24%;
+    --accent: 51 100% 52%; /* hazard yellow */
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 67% 42%; /* red */
+    --destructive-foreground: 60 14% 95%;
+    --border: 0 0% 4%; /* ink */
+    --input: 0 0% 4%;
+    --ring: 0 0% 4%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    margin: 0;
+  }
+}

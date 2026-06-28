@@ -3,3 +3,14 @@ node_modules/
 dist/
 .expo/
 *.log
+claude.md
+
+# --- Sprint 0 additions ---
+build/
+.env.local
+.env.*.local
+.DS_Store
+
+# Archived legacy JS scaffold (kept locally for Sprint 2 reference, not tracked)
+_archive/
+.claude

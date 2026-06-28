@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "BxB",
+    "slug": "bxb-mobile",
+    "scheme": "bxb",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#0A0A0A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.fourloop.bxb"
+    }
+  }
+}
