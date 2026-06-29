@@ -1,0 +1,255 @@
+{
+  "info": {
+    "name": "BxB Attendance — API v1 (Sprint 1)",
+    "description": "Brick × Brick Attendance Module API. Base URL /api/v1.\n\nThe collection pre-request script signs in to Supabase as {{email}} and stores the ES256 JWT in {{auth_token}}, sent as a Bearer token on every request (except /health).\n\nSetup before running write/read requests:\n1. Run `Identity > GET /me/projects` and copy a project id into the `project_id` variable.\n2. Run `Projects > GET roster` and copy a `no_record` worker_id into `worker_id`.\n3. `work_date` defaults to today (PHT) — set to yesterday if testing outside work hours.\nClock timestamps must be within 05:00–23:00 PHT and not in the future (guards G8/G12).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Sign in to Supabase and cache the access token for this run.",
+          "pm.sendRequest({",
+          "  url: pm.variables.get('supabase_url') + '/auth/v1/token?grant_type=password',",
+          "  method: 'POST',",
+          "  header: {",
+          "    'Content-Type': 'application/json',",
+          "    'apikey': pm.variables.get('supabase_anon_key')",
+          "  },",
+          "  body: { mode: 'raw', raw: JSON.stringify({ email: pm.variables.get('email'), password: pm.variables.get('password') }) }",
+          "}, function (err, res) {",
+          "  if (!err && res.code === 200) { pm.collectionVariables.set('auth_token', res.json().access_token); }",
+          "  else { console.log('Supabase sign-in failed', err || res.code); }",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000/api/v1" },
+    { "key": "supabase_url", "value": "https://rthrywanzluiahamfjmg.supabase.co" },
+    { "key": "supabase_anon_key", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aHJ5d2Fuemx1aWFoYW1mam1nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NDMwMDcsImV4cCI6MjA5ODIxOTAwN30.2D7PazNg3_A874_CxB6r3IoW2NkANRQvFOw4aVwduwg" },
+    { "key": "email", "value": "princess@bxb.test" },
+    { "key": "password", "value": "password" },
+    { "key": "auth_token", "value": "" },
+    { "key": "project_id", "value": "" },
+    { "key": "worker_id", "value": "" },
+    { "key": "work_date", "value": "2026-06-28" },
+    { "key": "clock_in_at", "value": "2026-06-28T08:00:00+08:00" },
+    { "key": "clock_out_at", "value": "2026-06-28T17:00:00+08:00" },
+    { "key": "attendance_id", "value": "" },
+    { "key": "unassigned_worker_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health (open)",
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "url": "{{base_url}}/health" }
+        }
+      ]
+    },
+    {
+      "name": "Identity",
+      "item": [
+        { "name": "GET /me", "request": { "method": "GET", "url": "{{base_url}}/me" } },
+        { "name": "GET /me/projects", "request": { "method": "GET", "url": "{{base_url}}/me/projects" } }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        { "name": "GET /projects", "request": { "method": "GET", "url": "{{base_url}}/projects" } },
+        { "name": "GET /projects/:id", "request": { "method": "GET", "url": "{{base_url}}/projects/{{project_id}}" } },
+        {
+          "name": "GET /projects/:id/roster?date",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/projects/{{project_id}}/roster?date={{work_date}}",
+              "host": ["{{base_url}}"],
+              "path": ["projects", "{{project_id}}", "roster"],
+              "query": [{ "key": "date", "value": "{{work_date}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance Writes",
+      "item": [
+        {
+          "name": "POST /attendance/clock-in",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-in",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_in_at\": \"{{clock_in_at}}\"\n}" }
+          }
+        },
+        {
+          "name": "POST /attendance/clock-out",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-out",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_out_at\": \"{{clock_out_at}}\"\n}" }
+          }
+        },
+        {
+          "name": "POST /attendance/mark-absent",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/mark-absent",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\"\n}" }
+          }
+        },
+        {
+          "name": "POST /attendance/undo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/undo",
+            "body": { "mode": "raw", "raw": "{\n  \"attendance_id\": \"{{attendance_id}}\"\n}" }
+          }
+        },
+        {
+          "name": "PATCH /attendance/:id/edit-time (web roles)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/{{attendance_id}}/edit-time",
+            "body": { "mode": "raw", "raw": "{\n  \"clock_in_at\": \"{{clock_in_at}}\",\n  \"clock_out_at\": \"{{clock_out_at}}\"\n}" },
+            "description": "Run with email=admin@bxb.test (SM is 403 here)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attendance Reads",
+      "item": [
+        {
+          "name": "GET /attendance?date&project_id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/attendance?date={{work_date}}&project_id={{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "date", "value": "{{work_date}}" },
+                { "key": "project_id", "value": "{{project_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /attendance?from&to&project_id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/attendance?from={{work_date}}&to={{work_date}}&project_id={{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["attendance"],
+              "query": [
+                { "key": "from", "value": "{{work_date}}" },
+                { "key": "to", "value": "{{work_date}}" },
+                { "key": "project_id", "value": "{{project_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /attendance/summary?date&project_id",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/attendance/summary?date={{work_date}}&project_id={{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["attendance", "summary"],
+              "query": [
+                { "key": "date", "value": "{{work_date}}" },
+                { "key": "project_id", "value": "{{project_id}}" }
+              ]
+            }
+          }
+        },
+        { "name": "GET /attendance/:id", "request": { "method": "GET", "url": "{{base_url}}/attendance/{{attendance_id}}" } },
+        { "name": "GET /attendance/:id/logs", "request": { "method": "GET", "url": "{{base_url}}/attendance/{{attendance_id}}/logs" } }
+      ]
+    },
+    {
+      "name": "Negative cases",
+      "description": "Each should return the §11 error envelope with the noted code.",
+      "item": [
+        {
+          "name": "Duplicate clock-in → 409 DUPLICATE",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-in",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_in_at\": \"{{clock_in_at}}\"\n}" },
+            "description": "Send twice; second is 409 DUPLICATE."
+          }
+        },
+        {
+          "name": "Clock-out without clock-in → 409 INVALID_STATE",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-out",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_out_at\": \"{{clock_out_at}}\"\n}" },
+            "description": "Use a worker with no row for work_date."
+          }
+        },
+        {
+          "name": "Clock-out before clock-in → 422 INVALID_INPUT",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-out",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_out_at\": \"2026-06-28T07:00:00+08:00\"\n}" }
+          }
+        },
+        {
+          "name": "Undo 2-day-old record → 422 OUT_OF_WINDOW",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/undo",
+            "body": { "mode": "raw", "raw": "{\n  \"attendance_id\": \"{{attendance_id}}\"\n}" },
+            "description": "Use an attendance_id whose work_date is older than yesterday."
+          }
+        },
+        {
+          "name": "Mark-absent on existing row → 409 INVALID_STATE",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/mark-absent",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{worker_id}}\",\n  \"work_date\": \"{{work_date}}\"\n}" },
+            "description": "Worker already has a row for work_date."
+          }
+        },
+        {
+          "name": "Unassigned-project SM call → 403 FORBIDDEN",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/attendance/clock-in",
+            "body": { "mode": "raw", "raw": "{\n  \"worker_id\": \"{{unassigned_worker_id}}\",\n  \"work_date\": \"{{work_date}}\",\n  \"clock_in_at\": \"{{clock_in_at}}\"\n}" },
+            "description": "email=princess (SM BGC), unassigned_worker_id from a Katipunan worker → 403."
+          }
+        }
+      ]
+    }
+  ]
+}

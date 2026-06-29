@@ -1,10 +1,10 @@
 # Brick × Brick — Attendance Module Specification
 
-> **Status:** v1.0 — Source of truth for implementation
+> **Status:** v1.2 — Source of truth for implementation
 > **Owner:** FourLoop (Princess, solo execution)
 > **Client:** JJC-R Blueprints and Drafting Services
 > **Scope:** Web Admin (full) + Site Manager Mobile App (full). No worker-facing app.
-> **Last updated:** 2026-06-28
+> **Last updated:** 2026-06-29 (post-Sprint 1 reconciliation; see §16 Changelog)
 
 This document is referenced by section number (e.g. "§2.3") throughout the implementation plan and Claude Code prompts. **Read this end-to-end before writing any code.**
 
@@ -73,15 +73,22 @@ create table projects (
   created_at timestamptz default now()
 );
 
--- project_assignments (which SM runs which project)
+-- project_assignments (which SM/PM runs which project)
 create table project_assignments (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null references projects(id) on delete cascade,
   user_id uuid not null references profiles(id) on delete cascade,
+  role user_role not null,
   is_active boolean not null default true,
-  assigned_at timestamptz default now(),
-  unique (project_id, is_active) where (is_active = true) -- one active SM per project
+  assigned_at timestamptz default now()
 );
+-- exactly one ACTIVE site_manager per project (PMs may be assigned to many projects)
+create unique index project_assignments_one_active_sm
+  on project_assignments (project_id)
+  where (is_active = true and role = 'site_manager');
+-- prevent duplicate (project, user) assignments
+create unique index project_assignments_project_user
+  on project_assignments (project_id, user_id);
 
 -- workers
 create table workers (
@@ -110,10 +117,11 @@ create table attendance (
 );
 create type attendance_status as enum ('clocked_in','clocked_out','absent');
 
--- attendance_logs (audit)
+-- attendance_logs (audit) — attendance_id nullable + ON DELETE SET NULL
+-- so logs survive after undo deletes the attendance row (see §6).
 create table attendance_logs (
   id uuid primary key default gen_random_uuid(),
-  attendance_id uuid references attendance(id) on delete cascade,
+  attendance_id uuid references attendance(id) on delete set null,
   worker_id uuid not null references workers(id),
   work_date date not null,
   action text not null, -- 'clock_in' | 'clock_out' | 'mark_absent' | 'undo' | 'proxy_clock_in' | 'proxy_clock_out' | 'edit_time'
@@ -176,7 +184,7 @@ create table attendance_logs (
 - **Display format:** `"8h 30m"` for whole+fractional; `"—"` (em dash) when clock-out has not occurred.
 - **Partial hours are not accrued** — a `clocked_in` row without `clock_out_at` reports `total_hours = null` and the UI shows `"—"`.
 - **Negative or zero durations** are rejected at write time (clock-out cannot equal or precede clock-in).
-- **Cross-midnight shifts** are out of scope for MVP — `work_date` is the calendar date of clock-in; if clock-out lands the next day before midnight + 4h grace, accept it; otherwise reject with 422.
+- **Cross-midnight shifts** (legitimate OT): `clock_in_at` must fall on `work_date` (PHT) within G12's [05:00, 23:00] window. `clock_out_at` may land on `work_date + 1` (PHT) but only up to 04:00 PHT (≤ midnight + 4h grace). Clock-outs at 04:01 PHT or later are rejected with 422 — likely data entry error or a labor-safety flag. **Precedence rule:** for a next-day clock-out within the 4h grace, the grace wins over G12's 23:00 upper bound.
 
 ---
 
@@ -478,7 +486,7 @@ Each is enforced and unit-tested.
 | G9 | Worker must belong to user's assigned project (SM only) | 403 FORBIDDEN |
 | G10 | `work_date` not older than 90 days | 422 INVALID_INPUT |
 | G11 | Body schema validation (zod) | 400 INVALID_INPUT |
-| G12 | Clock times within 05:00–23:00 PHT | 422 INVALID_INPUT |
+| G12 | Clock times within 05:00–23:00 PHT; next-day clock-out allowed ≤04:00 PHT (§3 grace) | 422 INVALID_INPUT |
 
 ---
 
@@ -635,3 +643,26 @@ Explicit non-goals so Claude Code doesn't drift:
 ---
 
 **End of spec.** Any behavior not described here is at the implementer's discretion but must not violate §0.
+
+---
+
+## §16 — Changelog
+
+### v1.2 — 2026-06-29 (post-Sprint 1 reconciliation)
+
+Sprint 1 surfaced one stale env assumption and two precedence ambiguities; this version codifies the resolutions.
+
+- **JWT verification — ES256 via JWKS, not HS256.** v1.0/1.1 implicitly assumed Supabase Auth signs tokens with HS256 using a shared `SUPABASE_JWT_SECRET`. In reality, newer Supabase projects (including ours, `rthrywanzluiahamfjmg`) sign access tokens with **ES256**, distributed via the project's JWKS endpoint at `{SUPABASE_URL}/auth/v1/.well-known/jwks.json`. The API verifies tokens against the JWKS locally (cached, no per-request Auth callback). `SUPABASE_JWT_SECRET` is now **optional** — kept in `env.example` as an HS256 fallback for compatibility with older Supabase projects, but not required for this one. Issuer check is still performed.
+- **§3 cross-midnight precedence rule** — was ambiguous against G12. Now explicit: for a next-day clock-out within the 4h grace (≤04:00 PHT), the grace wins over G12's 23:00 upper bound. Clock-ins are always subject to G12 [05:00, 23:00] PHT.
+- **§7.2 roster `date` parameter is unbounded at the API level.** UI surfaces (mobile §4, web §5) restrict the date picker to the correction window, but the API itself accepts any valid date for reads. Standard "permissive API, restrictive UI" pattern — easier to lift UI restrictions later than to loosen the API.
+
+### v1.1 — 2026-06-29 (post-Sprint 0 reconciliation)
+
+Sprint 0 implementation surfaced three inconsistencies in v1.0; this version brings the DDL in line with the intended behavior already stated elsewhere in the spec.
+
+- **§2.1 `project_assignments`** — added `role user_role not null` column. The v1.0 DDL was missing it but §0.2 ("UNIQUE constraint where role = `site_manager`") and §14 (PM assigned to BGC + Cavite) both required it. Partial unique index now correctly scopes to `is_active = true AND role = 'site_manager'`, which lets PMs hold multiple project assignments while keeping the "one active SM per project" rule. Also added a `(project_id, user_id)` unique index to prevent duplicate assignments.
+- **§2.1 `attendance_logs.attendance_id`** — changed `ON DELETE CASCADE` to `ON DELETE SET NULL`. v1.0's CASCADE contradicted §6 ("on undo the row is deleted; **log retained**") — cascading would have wiped the audit trail. The column is now nullable so `attendance_logs` survive undo. RLS on `attendance_logs` scopes reads via `workers.project_id` (not `attendance.project_id`) so visibility still works after attendance_id goes null.
+- **RLS helper functions** — implementation note: helpers live in `public` schema (not `auth`) because the hosted Supabase `postgres` role lacks `CREATE` on `auth`. Renamed `user_role()` → `current_user_role()` to avoid clashing with the `user_role` enum type. Behavior unchanged. (This is implementation detail, not a spec behavior change, but noted here for consistency with the migrations.)
+
+### v1.0 — 2026-06-28
+Initial spec.

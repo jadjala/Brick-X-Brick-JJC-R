@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response, RequestHandler } from 'express';
+import { ZodError } from 'zod';
 
 // SPEC §11 error envelope. Endpoints in Sprint 1 throw AppError; the handler
 // below renders the exact shape. Wired up now so the contract is fixed early.
@@ -53,6 +54,17 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof AppError) {
     res.status(err.status).json({
       error: { code: err.code, message: err.message, ...(err.details ? { details: err.details } : {}) },
+    });
+    return;
+  }
+  // Zod body/query validation failures → 400 INVALID_INPUT (G11).
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      error: {
+        code: 'INVALID_INPUT',
+        message: 'Request validation failed.',
+        details: err.issues.map((i) => ({ path: i.path.join('.'), message: i.message })),
+      },
     });
     return;
   }

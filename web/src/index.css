@@ -55,3 +55,41 @@
     margin: 0;
   }
 }
+
+/* Brutalist loading: hazard-stripe shimmer, not a soft pulse. */
+@keyframes brutal-stripe {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 45px 0;
+  }
+}
+.brutal-skeleton {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--concrete) 0 8px,
+    #b9b9b1 8px 16px
+  );
+  background-size: 45px 45px;
+  animation: brutal-stripe 0.55s linear infinite;
+}
+
+/* Hazard tape divider (login + accents). */
+.hazard-tape {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--yellow) 0 14px,
+    var(--ink) 14px 28px
+  );
+}
+
+/* Row flash used by realtime later; defined now so the table is ready. */
+@keyframes row-flash {
+  0% {
+    background-color: var(--yellow);
+  }
+  100% {
+    background-color: transparent;
+  }
+}

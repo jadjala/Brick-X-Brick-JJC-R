@@ -14,3 +14,7 @@ build/
 # Archived legacy JS scaffold (kept locally for Sprint 2 reference, not tracked)
 _archive/
 .claude
+# Sprint 2a: tsc -b build artifacts in web/
+web/vite.config.js
+web/vite.config.d.ts
+*.tsbuildinfo

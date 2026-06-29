@@ -9,12 +9,20 @@
     "splash": {
       "backgroundColor": "#0A0A0A"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": false
     },
     "android": {
-      "package": "com.fourloop.bxb"
-    }
+      "package": "com.fourloop.bxb",
+      "usesCleartextTraffic": true
+    },
+    "plugins": [
+      "expo-font",
+      "@react-native-community/datetimepicker",
+      "expo-secure-store"
+    ]
   }
 }
