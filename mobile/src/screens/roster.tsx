@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ChevronDown } from 'lucide-react-native';
+import { ChevronDown, LogOut } from 'lucide-react-native';
 import { useAuth } from '../contexts/auth';
 import { useBanner } from '../components/error-banner';
 import { api } from '../lib/api';
@@ -14,8 +14,14 @@ import { colors, fonts, borderW, space } from '../theme';
 type DateChoice = 'today' | 'yesterday';
 
 export function RosterScreen() {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const { showError } = useBanner();
+
+  const confirmSignOut = () =>
+    Alert.alert('Sign Out', 'Sign out of Brick × Brick?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign Out', style: 'destructive', onPress: () => void signOut().catch(showError) },
+    ]);
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [project, setProject] = useState<Project | null>(null);
@@ -155,6 +161,18 @@ export function RosterScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Project header */}
       <View style={styles.header}>
+        {/* Identity + sign out */}
+        <View style={styles.topBar}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.kicker}>SITE MANAGER</Text>
+            <Text style={styles.identity} numberOfLines={1}>{profile?.full_name ?? '—'}</Text>
+          </View>
+          <Pressable onPress={confirmSignOut} hitSlop={10} style={styles.signOutBtn}>
+            <LogOut color={colors.paper} size={16} strokeWidth={2.5} />
+            <Text style={styles.signOutText}>SIGN OUT</Text>
+          </Pressable>
+        </View>
+
         <Pressable
           disabled={projects.length <= 1}
           onPress={() => setPickerOpen(true)}
@@ -264,6 +282,11 @@ export function RosterScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   header: { backgroundColor: colors.ink, paddingHorizontal: space.g2, paddingTop: space.g1, paddingBottom: space.g2, gap: space.g2 },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: space.g2 },
+  kicker: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 2, color: colors.concrete },
+  identity: { fontFamily: fonts.monoBold, fontSize: 13, letterSpacing: 1, color: colors.paper, marginTop: 1 },
+  signOutBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: borderW, borderColor: colors.paper, paddingHorizontal: 10, paddingVertical: 6 },
+  signOutText: { fontFamily: fonts.monoBold, fontSize: 11, letterSpacing: 1, color: colors.paper },
   projectBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   projectName: { fontFamily: fonts.display, fontSize: 22, color: colors.paper },
   projectLoc: { fontFamily: fonts.mono, fontSize: 12, color: colors.concrete, marginTop: 2 },

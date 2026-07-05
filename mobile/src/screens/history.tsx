@@ -92,6 +92,9 @@ export function HistoryScreen() {
                 <Text style={styles.times}>
                   {formatTimePHT(item.clock_in_at)} – {formatTimePHT(item.clock_out_at)}
                 </Text>
+                {item.recorded_by_name ? (
+                  <Text style={styles.recordedBy} numberOfLines={1}>BY {item.recorded_by_name}</Text>
+                ) : null}
               </View>
               <View style={styles.hoursCol}>
                 <Text style={styles.hours}>{formatHours(item.total_hours)}</Text>
@@ -118,6 +121,7 @@ const styles = StyleSheet.create({
   pos: { fontFamily: fonts.mono, fontSize: 11, color: colors.steel, marginTop: 1 },
   mid: { alignItems: 'flex-start', gap: 4 },
   times: { fontFamily: fonts.mono, fontSize: 11, color: colors.steel },
+  recordedBy: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 1, color: colors.concrete },
   hoursCol: { alignItems: 'flex-end', width: 70 },
   hours: { fontFamily: fonts.monoBold, fontSize: 14, color: colors.ink },
   ot: { fontFamily: fonts.mono, fontSize: 11, color: colors.orange },

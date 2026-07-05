@@ -31,10 +31,12 @@ export function FilterStrip({
   filters: Filters;
   onChange: (patch: Partial<Filters>) => void;
 }) {
-  const toggleStatus = (s: RowStatus) => {
-    const has = filters.statuses.includes(s);
-    const next = has ? filters.statuses.filter((x) => x !== s) : [...filters.statuses, s];
-    onChange({ statuses: next.length ? next : ALL_STATUSES }); // never empty
+  // Single-select: clicking a status shows only that status. Clicking the
+  // active one again clears the filter (back to all). "All active" == no filter.
+  const isFiltering = filters.statuses.length === 1;
+  const selectStatus = (s: RowStatus) => {
+    const soleActive = isFiltering && filters.statuses[0] === s;
+    onChange({ statuses: soleActive ? ALL_STATUSES : [s] });
   };
 
   return (
@@ -95,11 +97,11 @@ export function FilterStrip({
         <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-steel">Status</span>
         <div className="flex flex-wrap gap-1.5">
           {ALL_STATUSES.map((s) => {
-            const on = filters.statuses.includes(s);
+            const on = isFiltering && filters.statuses[0] === s;
             return (
               <button
                 key={s}
-                onClick={() => toggleStatus(s)}
+                onClick={() => selectStatus(s)}
                 className={cn(
                   'border-2 border-ink px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors',
                   on ? 'bg-ink text-paper' : 'bg-paper text-concrete',
