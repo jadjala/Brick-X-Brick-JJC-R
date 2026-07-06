@@ -19,7 +19,7 @@ export function StatusPill({ status }: { status: RowStatus }) {
   );
 }
 
-const ROLE_ABBR: Record<Role, string> = {
+export const ROLE_ABBR: Record<Role, string> = {
   admin: 'ADMIN',
   general_manager: 'GM',
   project_manager: 'PM',

@@ -7,7 +7,7 @@ import { useBanner } from '../components/error-banner';
 import { api } from '../lib/api';
 import { todayPhtDate, yesterdayPhtDate } from '../lib/format';
 import type { Project, RosterRow, RowStatus, AttendanceJoined } from '../lib/types';
-import { Button, StatusPill } from '../components/brutalist';
+import { Button, StatusPill, ROLE_ABBR } from '../components/brutalist';
 import { TimeConfirmModal } from '../components/time-confirm-modal';
 import { colors, fonts, borderW, space } from '../theme';
 
@@ -164,7 +164,7 @@ export function RosterScreen() {
         {/* Identity + sign out */}
         <View style={styles.topBar}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.kicker}>SITE MANAGER</Text>
+            <Text style={styles.kicker}>{profile?.role ? ROLE_ABBR[profile.role] : '—'}</Text>
             <Text style={styles.identity} numberOfLines={1}>{profile?.full_name ?? '—'}</Text>
           </View>
           <Pressable onPress={confirmSignOut} hitSlop={10} style={styles.signOutBtn}>
@@ -191,7 +191,7 @@ export function RosterScreen() {
             const active = dateChoice === d;
             return (
               <Pressable key={d} onPress={() => setDateChoice(d)} style={[styles.datePill, active ? styles.datePillActive : styles.datePillIdle]}>
-                <Text style={[styles.datePillText, { color: active ? colors.paper : colors.ink }]}>{d.toUpperCase()}</Text>
+                <Text style={[styles.datePillText, { color: active ? colors.paper : colors.paper }]}>{d.toUpperCase()}</Text>
               </Pressable>
             );
           })}
