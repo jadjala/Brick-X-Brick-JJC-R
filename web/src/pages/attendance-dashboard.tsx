@@ -113,10 +113,20 @@ export function AttendanceDashboardPage() {
     }));
   }, [mode, rosterQ.data, listQ.data, projectName, date]);
 
-  const rows = useMemo(
-    () => allRows.filter((r) => filters.statuses.includes(r.status)),
-    [allRows, filters.statuses],
-  );
+ const rows = useMemo(
+  () =>
+    allRows
+      .filter((r) => filters.statuses.includes(r.status))
+      .sort((a, b) => {
+        // 1. Sort by date ascending (earliest first)
+        if (a.work_date !== b.work_date) {
+          return a.work_date.localeCompare(b.work_date);
+        }
+        // 2. Same date → sort by worker name, alphabetically
+        return a.full_name.localeCompare(b.full_name);
+      }),
+  [allRows, filters.statuses],
+);
 
   const tableLoading = mode === 'single' ? rosterQ.loading : listQ.loading;
 

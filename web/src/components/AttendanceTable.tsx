@@ -1,11 +1,11 @@
 import { FileX2 } from 'lucide-react';
 import { Table, THead, TH, TBody, TRow, TCell, StatusPill, Skeleton } from '@/components/brutalist';
 import { RowActions, type RowAction } from './RowActions';
-import { formatHours, formatTimePHT } from '@/lib/format';
+import { formatHours, formatTimePHT, formatDatePHT } from '@/lib/format';
 import type { Role } from '@/lib/types';
 import type { DashRow } from '@/lib/dash';
 
-const COLS = 10;
+const COLS = 11
 
 export function AttendanceTable({
   rows,
@@ -24,6 +24,7 @@ export function AttendanceTable({
         <TH>Worker</TH>
         <TH>Position</TH>
         <TH>Project</TH>
+        <TH>Date</TH>
         <TH>Status</TH>
         <TH numeric>Clock In</TH>
         <TH numeric>Clock Out</TH>
@@ -58,6 +59,7 @@ export function AttendanceTable({
               <TCell className="font-semibold">{r.full_name}</TCell>
               <TCell className="text-steel">{r.position ?? '—'}</TCell>
               <TCell className="text-steel">{r.project_name}</TCell>
+              <TCell className="text-steel">{formatDatePHT(r.work_date)}</TCell>
               <TCell>
                 <StatusPill status={r.status} />
               </TCell>
